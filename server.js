@@ -1,44 +1,54 @@
+require("dotenv").config();
+
 const express = require("express");
 const path = require("path");
-const fs = require("fs");
 const crypto = require("crypto");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const DATA_FOLDER = path.join(__dirname, "data");
-const DATA_FILE = path.join(DATA_FOLDER, "reports.json");
+// Connect to Supabase
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) {
+    throw new Error("Missing Supabase environment variables.");
+}
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(express.static(path.join(__dirname, "public")));
-
-// Create data folder and file if missing
-if (!fs.existsSync(DATA_FOLDER)) {
-    fs.mkdirSync(DATA_FOLDER, { recursive: true });
-}
-
-if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
-}
-
-// Read reports
-function getReports() {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-}
-
-// Save reports
-function saveReports(reports) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(reports, null, 2));
-}
 
 // Test server
 app.get("/test", (req, res) => {
     res.send("FitTrack Weekly Server is Running!");
 });
 
+// Convert database report to the format used by the client page
+function formatReport(report) {
+    return {
+        id: report.id,
+        token: report.token,
+        clientName: report.client_name,
+        fitnessGoal: report.fitness_goal,
+        startingWeight: report.starting_weight,
+        currentWeight: report.current_weight,
+        week: report.week,
+        workouts: report.workouts,
+        achievements: report.achievements,
+        improvements: report.improvements,
+        nextGoals: report.next_goals,
+        trainerMessage: report.trainer_message,
+        createdAt: report.created_at
+    };
+}
+
 // Create report
-app.post("/api/reports", (req, res) => {
+app.post("/api/reports", async (req, res) => {
     try {
         const {
             clientName,
@@ -59,28 +69,33 @@ app.post("/api/reports", (req, res) => {
             });
         }
 
-        const reports = getReports();
-
         const token = crypto.randomBytes(24).toString("hex");
 
-        const report = {
-            id: crypto.randomUUID(),
-            token,
-            clientName,
-            fitnessGoal,
-            startingWeight,
-            currentWeight,
-            week,
-            workouts,
-            achievements,
-            improvements,
-            nextGoals,
-            trainerMessage,
-            createdAt: new Date().toISOString()
-        };
+        const { data, error } = await supabase
+            .from("client_reports")
+            .insert({
+                token,
+                client_name: clientName,
+                fitness_goal: fitnessGoal || null,
+                starting_weight: startingWeight === "" ? null : startingWeight || null,
+                current_weight: currentWeight === "" ? null : currentWeight || null,
+                week,
+                workouts: workouts || {},
+                achievements: achievements || "",
+                improvements: improvements || "",
+                next_goals: nextGoals || "",
+                trainer_message: trainerMessage || ""
+            })
+            .select()
+            .single();
 
-        reports.push(report);
-        saveReports(reports);
+        if (error) {
+            console.error("Supabase error:", error);
+
+            return res.status(500).json({
+                message: "Could not save report."
+            });
+        }
 
         res.status(201).json({
             message: "Weekly report created successfully!",
@@ -97,20 +112,37 @@ app.post("/api/reports", (req, res) => {
 });
 
 // Get individual client report
-app.get("/api/reports/:token", (req, res) => {
-    const reports = getReports();
+app.get("/api/reports/:token", async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from("client_reports")
+            .select("*")
+            .eq("token", req.params.token)
+            .maybeSingle();
 
-    const report = reports.find(
-        item => item.token === req.params.token
-    );
+        if (error) {
+            console.error("Supabase error:", error);
 
-    if (!report) {
-        return res.status(404).json({
-            message: "Report not found."
+            return res.status(500).json({
+                message: "Could not retrieve report."
+            });
+        }
+
+        if (!data) {
+            return res.status(404).json({
+                message: "Report not found."
+            });
+        }
+
+        res.json(formatReport(data));
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Could not retrieve report."
         });
     }
-
-    res.json(report);
 });
 
 // Client page
