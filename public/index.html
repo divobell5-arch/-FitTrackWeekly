@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FitTrack Weekly | Trainer</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>FITTRACK WEEKLY</h1>
+    <p>Your Fitness Journey. Measured Weekly.</p>
+</header>
+
+<main>
+
+    <section class="welcome">
+        <h2>Trainer Dashboard</h2>
+        <p>Create and share your clients' weekly progress reports.</p>
+    </section>
+
+    <section class="form-container">
+
+        <h2>Create Weekly Report</h2>
+
+        <form id="reportForm">
+
+            <h3>Client Information</h3>
+
+            <label>Client Full Name</label>
+            <input type="text" id="clientName" required>
+
+            <label>Fitness Goal</label>
+            <select id="fitnessGoal">
+                <option>Muscle Building</option>
+                <option>Fat Loss</option>
+                <option>Strength Training</option>
+                <option>General Fitness</option>
+                <option>Weight Gain</option>
+            </select>
+
+            <div class="row">
+                <div>
+                    <label>Starting Weight (kg)</label>
+                    <input type="number" id="startingWeight" step="0.1">
+                </div>
+
+                <div>
+                    <label>Current Weight (kg)</label>
+                    <input type="number" id="currentWeight" step="0.1">
+                </div>
+            </div>
+
+            <label>Week Covered</label>
+            <input type="text" id="week"
+                   placeholder="e.g. 2–7 November 2026" required>
+
+            <h3>Weekly Workout Splits</h3>
+
+            <div id="workoutDays"></div>
+
+            <h3>Weekly Achievements</h3>
+            <textarea id="achievements"
+                      placeholder="What did the client achieve?"></textarea>
+
+            <h3>Areas to Improve</h3>
+            <textarea id="improvements"
+                      placeholder="What needs improvement?"></textarea>
+
+            <h3>Goals for Next Week</h3>
+            <textarea id="nextGoals"
+                      placeholder="Enter next week's targets..."></textarea>
+
+            <h3>Trainer's Message</h3>
+            <textarea id="trainerMessage"
+                      placeholder="Write an encouraging message..."></textarea>
+
+            <button type="submit" id="submitBtn">
+                GENERATE CLIENT LINK
+            </button>
+
+        </form>
+
+        <div id="result"></div>
+
+    </section>
+
+</main>
+
+<footer>
+    <p>FitTrack Weekly | Powered by Divobell Okinda</p>
+</footer>
+
+<script src="script.js"></script>
+
+</body>
+</html>
