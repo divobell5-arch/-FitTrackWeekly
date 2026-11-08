@@ -151,6 +151,6 @@ app.get("/client/:token", (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`FitTrack Weekly running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`FitTrack Weekly running on port ${PORT}`);
 });
